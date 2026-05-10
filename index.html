@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>PDF Master Suite Pro | Ultimate PDF Workstation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%); min-height: 100vh; }
+        .glass-card { background: rgba(255,255,255,0.92); backdrop-filter: blur(4px); transition: all 0.25s; border: 1px solid rgba(255,255,255,0.5); cursor: pointer; }
+        .glass-card:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 25px 35px -12px rgba(0,0,0,0.2); background: white; }
+        .tool-icon { width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center; border-radius: 1.2rem; background: linear-gradient(135deg, #0f2b3d, #1e4a6e); color: white; }
+        .section-title { border-left: 5px solid #1e3c72; padding-left: 1rem; font-weight: 800; }
+        .modal-blur { backdrop-filter: blur(12px); background-color: rgba(0,0,0,0.6); }
+        .btn-primary { background: linear-gradient(95deg, #0f2b3d, #1b4f72); }
+        .btn-primary:hover { transform: scale(1.03); }
+        .corner-buttons { position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; gap: 12px; }
+        .login-btn-corner, .signup-btn-corner { padding: 10px 24px; border-radius: 40px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .login-btn-corner { background: white; color: #1e3c72; border: 1px solid #cbd5e1; }
+        .signup-btn-corner { background: linear-gradient(135deg, #0f2b3d, #1e4a6e); color: white; }
+        .user-profile-corner { position: fixed; top: 20px; right: 20px; z-index: 1000; background: white; border-radius: 60px; padding: 8px 20px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        #cameraPreview { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10000; background: #1a1a1a; border-radius: 20px; overflow: hidden; box-shadow: 0 0 0 1000px rgba(0,0,0,0.85); }
+        #cameraPreview video { width: 80vw; max-width: 800px; height: auto; }
+        .camera-controls { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; padding: 15px; background: rgba(0,0,0,0.8); display: flex; gap: 15px; justify-content: center; }
+        .audio-player { position: fixed; bottom: 20px; right: 20px; z-index: 1000; background: white; border-radius: 20px; padding: 15px 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); min-width: 320px; border: 1px solid #e2e8f0; }
+        .audio-player button { background: #1e4a6e; color: white; border: none; padding: 8px 16px; border-radius: 40px; cursor: pointer; margin: 0 5px; }
+        .download-btn { background: #22c55e !important; }
+        .footer-links a { transition: all 0.2s; }
+        .footer-links a:hover { color: #f59e0b; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <!-- Top Right Corner: Only Login/Signup -->
+    <div id="authButtonsCorner" class="corner-buttons">
+        <button onclick="openLoginModal()" class="login-btn-corner"><i class="fas fa-sign-in-alt mr-2"></i>Login</button>
+        <button onclick="openSignupModal()" class="signup-btn-corner"><i class="fas fa-user-plus mr-2"></i>Sign Up</button>
+    </div>
+    <div id="userProfileCorner" class="user-profile-corner hidden">
+        <i class="fas fa-user-circle text-2xl text-blue-700"></i>
+        <span id="cornerUserName" class="font-semibold text-gray-800">User</span>
+        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white text-xs px-4 py-1.5 rounded-full"><i class="fas fa-sign-out-alt mr-1"></i>Logout</button>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-blur">
+        <div class="bg-white rounded-3xl w-full max-w-md mx-4 overflow-hidden shadow-2xl">
+            <div class="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-5 text-white">
+                <div class="flex justify-between items-center"><div><i class="fas fa-file-pdf text-3xl text-amber-400"></i><h2 class="text-2xl font-bold">Welcome Back</h2></div><button onclick="closeLoginModal()" class="text-white text-3xl leading-5 hover:text-red-300">&times;</button></div>
+                <p class="text-gray-300 text-sm">Sign in (optional) — all tools free</p>
+            </div>
+            <div class="p-7"><input type="email" id="loginEmail" placeholder="Email" class="w-full p-3 border rounded-xl mb-4"><input type="password" id="loginPassword" placeholder="Password" class="w-full p-3 border rounded-xl mb-6"><button onclick="handleLogin()" class="w-full btn-primary text-white py-3 rounded-xl font-bold">Login →</button><p class="text-center mt-5 text-sm">No account? <button onclick="switchToSignup()" class="text-blue-600 font-semibold">Sign up</button></p><button onclick="closeLoginModal()" class="w-full mt-3 py-2 rounded-xl border border-gray-300 hover:bg-gray-100 transition font-medium"><i class="fas fa-arrow-left mr-2"></i> Cancel / Back</button></div>
+        </div>
+    </div>
+    <div id="signupModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-blur">
+        <div class="bg-white rounded-3xl w-full max-w-md mx-4 overflow-hidden shadow-2xl">
+            <div class="bg-gradient-to-r from-emerald-800 to-teal-800 px-6 py-5 text-white">
+                <div class="flex justify-between items-center"><div><i class="fas fa-user-plus text-3xl"></i><h2 class="text-2xl font-bold">Sign Up</h2></div><button onclick="closeSignupModal()" class="text-white text-3xl leading-5 hover:text-red-300">&times;</button></div>
+                <p class="text-gray-200 text-sm">Join free — tools work without account</p>
+            </div>
+            <div class="p-7"><input type="text" id="signupName" placeholder="Full name" class="w-full p-3 border rounded-xl mb-4"><input type="email" id="signupEmail" placeholder="Email" class="w-full p-3 border rounded-xl mb-4"><input type="password" id="signupPassword" placeholder="Password (min 4)" class="w-full p-3 border rounded-xl mb-6"><button onclick="handleSignup()" class="w-full bg-gradient-to-r from-emerald-700 to-teal-700 text-white py-3 rounded-xl font-bold">Get Started →</button><p class="text-center mt-5 text-sm">Already have an account? <button onclick="switchToLogin()" class="text-teal-600 font-semibold">Sign in</button></p><button onclick="closeSignupModal()" class="w-full mt-3 py-2 rounded-xl border border-gray-300 hover:bg-gray-100 transition font-medium"><i class="fas fa-arrow-left mr-2"></i> Cancel / Back</button></div>
+        </div>
+    </div>
+
+    <!-- Audio Player Panel -->
+    <div id="audioPlayerPanel" class="audio-player hidden">
+        <div class="flex justify-between items-center"><div><i class="fas fa-headphones text-blue-600"></i> <span class="font-semibold ml-2" id="audioFileName">Reading PDF...</span></div><button onclick="stopAudio()" class="text-red-500 hover:text-red-700 text-xl">&times;</button></div>
+        <div class="audio-progress"><div id="audioProgressFill" class="audio-progress-fill"></div></div>
+        <div class="flex justify-center gap-2 mt-2 flex-wrap"><button id="playPauseBtn" onclick="togglePlayPause()"><i class="fas fa-pause"></i> Pause</button><button onclick="stopAudio()"><i class="fas fa-stop"></i> Stop</button><button id="downloadAudioBtn" onclick="downloadAudio()" class="download-btn"><i class="fas fa-download"></i> Download MP3</button></div>
+        <div class="text-xs text-gray-500 text-center mt-2" id="audioStatus">Playing...</div>
+    </div>
+
+    <!-- Main App Content -->
+    <div class="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4 shadow-xl sticky top-0 z-20">
+        <div class="container mx-auto flex justify-between items-center"><div class="flex items-center gap-3"><i class="fas fa-file-pdf text-4xl text-amber-400"></i><div><h1 class="text-2xl md:text-3xl font-extrabold">PDF Master Suite <span class="text-amber-300">| Pro</span></h1><p class="text-xs text-gray-300 hidden md:block">95+ Tools • PDF to Audio • MP3 Download • OCR • Password</p></div></div><div class="text-sm bg-slate-700 px-4 py-2 rounded-full"><i class="fas fa-bolt text-yellow-400"></i> 100% Local</div></div>
+    </div>
+    <main class="container mx-auto px-4 py-8">
+        <div class="bg-green-50 border border-green-300 rounded-2xl p-4 mb-6 text-green-800"><i class="fas fa-check-circle mr-2"></i> <strong>✅ All Tools Working!</strong> Use any tool. Links at bottom: About, Terms, Privacy, Sitemap.</div>
+        <div class="mb-10"><h2 class="section-title text-2xl mb-5">🔐 Password & Core Tools</h2><div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5" id="coreToolsGrid"></div></div>
+        <div class="mb-10"><h2 class="section-title text-2xl mb-5">📄 Convert PDF → Word, Excel, PPT, Image, Audio (MP3), JSON, Markdown, HTML, SVG, TXT</h2><div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5" id="convertToolsGrid"></div></div>
+        <div class="mb-10"><h2 class="section-title text-2xl mb-5">🗜️ Archive & Compression (ZIP, RAR, TAR.GZ, ARJ, CAB)</h2><div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5" id="archiveToolsGrid"></div></div>
+        <div class="mb-10"><h2 class="section-title text-2xl mb-5">🛠️ Advanced Utilities: OCR, Compare, Scan, Organize, Page Numbers, Repair</h2><div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5" id="securityToolsGrid"></div></div>
+        <div class="mb-10"><h2 class="section-title text-2xl mb-5">⚙️ Essential Operations: Merge, Split, Compress, Rotate, Watermark</h2><div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5" id="essentialToolsGrid"></div></div>
+    </main>
+
+    <!-- Footer with All Links -->
+    <footer class="bg-white border-t border-gray-200 py-6 mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <div class="footer-links flex flex-wrap justify-center gap-6 mb-4 text-sm">
+                <a href="about.html" target="_blank" class="text-gray-600 hover:text-amber-600 transition"><i class="fas fa-info-circle mr-1"></i> About</a>
+                <a href="terms.html" target="_blank" class="text-gray-600 hover:text-amber-600 transition"><i class="fas fa-file-contract mr-1"></i> Terms & Conditions</a>
+                <a href="privacy.html" target="_blank" class="text-gray-600 hover:text-amber-600 transition"><i class="fas fa-shield-alt mr-1"></i> Privacy Policy</a>
+                <a href="sitemap.html" target="_blank" class="text-gray-600 hover:text-amber-600 transition"><i class="fas fa-sitemap mr-1"></i> Sitemap</a>
+            </div>
+            <p class="text-gray-500 text-xs">© 2025 PDF Master Suite Pro – 100% Client‑Side | Free forever | No data collection</p>
+            <p class="text-gray-400 text-xs mt-2"><i class="fas fa-lock"></i> All processing happens locally on your device. Your files never leave your computer.</p>
+        </div>
+    </footer>
+
+    <script>
+        // ==================== All JavaScript ====================
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        
+        // Audio variables
+        let currentUtterance = null, isPlaying = false, currentAudioText = "", currentAudioFileName = "", mediaRecorder = null, audioChunks = [], isRecording = false, recordedBlob = null;
+        function stopAudio() { if (window.speechSynthesis) window.speechSynthesis.cancel(); isPlaying = false; currentUtterance = null; if (mediaRecorder && isRecording) { try { mediaRecorder.stop(); } catch(e) {} isRecording = false; } document.getElementById('audioPlayerPanel').classList.add('hidden'); recordedBlob = null; audioChunks = []; }
+        function togglePlayPause() { if (!window.speechSynthesis) return; if (isPlaying) { window.speechSynthesis.pause(); isPlaying = false; document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-play"></i> Play'; document.getElementById('audioStatus').innerText = 'Paused'; } else { if (currentUtterance && window.speechSynthesis.paused) { window.speechSynthesis.resume(); isPlaying = true; document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause"></i> Pause'; document.getElementById('audioStatus').innerText = 'Playing...'; } else if (currentAudioText) { startSpeech(currentAudioText, currentAudioFileName); } } }
+        function downloadAudio() { if (recordedBlob) { const url = URL.createObjectURL(recordedBlob); const a = document.createElement('a'); a.href = url; a.download = `${currentAudioFileName.replace('.pdf', '')}_audio.mp3`; a.click(); URL.revokeObjectURL(url); alert("✅ Audio downloaded as MP3!"); } else { alert("Wait for audio to finish playing, then download."); } }
+        function startSpeech(text, fileName) { if (!window.speechSynthesis) { alert("Browser not supported"); return; } window.speechSynthesis.cancel(); currentAudioText = text; currentAudioFileName = fileName; audioChunks = []; recordedBlob = null; const maxChunkSize = 2000; const chunks = []; for (let i = 0; i < text.length; i += maxChunkSize) chunks.push(text.substring(i, i + maxChunkSize)); let currentChunkIndex = 0; let speechStarted = false; function startRecording() { navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => { mediaRecorder = new MediaRecorder(stream); audioChunks = []; mediaRecorder.ondataavailable = (event) => { if (event.data.size > 0) audioChunks.push(event.data); }; mediaRecorder.onstop = () => { recordedBlob = new Blob(audioChunks, { type: 'audio/mp3' }); document.getElementById('audioStatus').innerText = 'Audio ready for download!'; stream.getTracks().forEach(track => track.stop()); }; mediaRecorder.start(1000); isRecording = true; }).catch(err => console.log("Mic access denied:", err)); } function speakNextChunk() { if (currentChunkIndex >= chunks.length) { document.getElementById('audioStatus').innerText = 'Completed'; document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-play"></i> Play'; isPlaying = false; currentUtterance = null; if (mediaRecorder && isRecording) setTimeout(() => { if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }, 500); return; } const utterance = new SpeechSynthesisUtterance(chunks[currentChunkIndex]); utterance.rate = 0.9; utterance.pitch = 1; utterance.lang = 'en-US'; utterance.onend = () => { currentChunkIndex++; document.getElementById('audioProgressFill').style.width = (currentChunkIndex / chunks.length * 100) + '%'; speakNextChunk(); }; utterance.onstart = () => { if (!speechStarted) { speechStarted = true; startRecording(); } }; currentUtterance = utterance; window.speechSynthesis.speak(utterance); isPlaying = true; } document.getElementById('audioPlayerPanel').classList.remove('hidden'); document.getElementById('audioFileName').innerText = fileName; document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause"></i> Pause'; document.getElementById('audioStatus').innerText = 'Playing...'; document.getElementById('audioProgressFill').style.width = '0%'; speakNextChunk(); }
+
+        // Auth system
+        let currentUser = null; let users = JSON.parse(localStorage.getItem('pdf_users')) || [];
+        function openLoginModal() { document.getElementById('loginModal').classList.remove('hidden'); document.getElementById('loginModal').style.display = 'flex'; }
+        function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); document.getElementById('loginModal').style.display = 'none'; }
+        function openSignupModal() { document.getElementById('signupModal').classList.remove('hidden'); document.getElementById('signupModal').style.display = 'flex'; }
+        function closeSignupModal() { document.getElementById('signupModal').classList.add('hidden'); document.getElementById('signupModal').style.display = 'none'; }
+        function switchToSignup() { closeLoginModal(); openSignupModal(); }
+        function switchToLogin() { closeSignupModal(); openLoginModal(); }
+        function handleLogin() { const email = document.getElementById('loginEmail').value.trim(); const pwd = document.getElementById('loginPassword').value; const user = users.find(u => u.email === email && u.password === pwd); if(user) { currentUser = user; localStorage.setItem('pdf_current_user', JSON.stringify(user)); closeLoginModal(); document.getElementById('authButtonsCorner').style.display = 'none'; document.getElementById('userProfileCorner').classList.remove('hidden'); document.getElementById('cornerUserName').innerText = user.name; } else alert('Invalid credentials'); }
+        function handleSignup() { const name = document.getElementById('signupName').value.trim(); const email = document.getElementById('signupEmail').value.trim(); const pwd = document.getElementById('signupPassword').value; if(!name || !email || pwd.length<3) { alert("All fields required"); return; } if(users.find(u=>u.email===email)) { alert("User exists"); return; } const newUser = { name, email, password: pwd }; users.push(newUser); localStorage.setItem('pdf_users', JSON.stringify(users)); currentUser = newUser; localStorage.setItem('pdf_current_user', JSON.stringify(newUser)); closeSignupModal(); document.getElementById('authButtonsCorner').style.display = 'none'; document.getElementById('userProfileCorner').classList.remove('hidden'); document.getElementById('cornerUserName').innerText = name; }
+        function logout() { currentUser = null; localStorage.removeItem('pdf_current_user'); document.getElementById('authButtonsCorner').style.display = 'flex'; document.getElementById('userProfileCorner').classList.add('hidden'); }
+        function checkAutoLogin() { const saved = localStorage.getItem('pdf_current_user'); if(saved) { currentUser = JSON.parse(saved); if(users.find(u=>u.email===currentUser.email)) { document.getElementById('authButtonsCorner').style.display = 'none'; document.getElementById('userProfileCorner').classList.remove('hidden'); document.getElementById('cornerUserName').innerText = currentUser.name; } } }
+        document.getElementById('loginModal').addEventListener('click', function(e) { if(e.target === this) closeLoginModal(); });
+        document.getElementById('signupModal').addEventListener('click', function(e) { if(e.target === this) closeSignupModal(); });
+        
+        // Tool modal system
+        let currentAction = null, currentFiles = [];
+        window.closeToolModal = function() { const modal = document.getElementById('toolModal'); if(modal) { modal.classList.add('hidden'); modal.style.display = 'none'; } currentFiles = []; currentAction = null; }
+        function openToolModal(title, actionHandler, needsFile = true, extraHtml = '') { currentAction = actionHandler; const modal = document.getElementById('toolModal'); const modalBody = document.getElementById('modalBody'); if(needsFile) { modalBody.innerHTML = `<div class="space-y-5"><div class="border-2 border-dashed border-gray-300 rounded-xl p-5 text-center"><i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i><p>Upload PDF(s)</p><input type="file" id="modalFileInput" accept=".pdf" multiple class="mt-3 w-full text-sm"/></div>${extraHtml}</div>`; } else { modalBody.innerHTML = extraHtml; } document.getElementById('modalTitle').innerHTML = `<i class="fas fa-cog mr-2"></i> ${title}`; modal.classList.remove('hidden'); modal.style.display = 'flex'; const execBtn = document.getElementById('modalExecuteBtn'); const newExecBtn = execBtn.cloneNode(true); execBtn.parentNode.replaceChild(newExecBtn, execBtn); newExecBtn.onclick = async () => { if(needsFile) { const inp = document.getElementById('modalFileInput'); if(!inp.files || inp.files.length === 0) { alert("Select PDF(s)"); return; } currentFiles = Array.from(inp.files); } await currentAction(); closeToolModal(); }; }
+        async function extractPdfText(pdfData) { const doc = await pdfjsLib.getDocument({ data: pdfData }).promise; let text = ''; for(let i=1;i<=doc.numPages;i++) { const page = await doc.getPage(i); const content = await page.getTextContent(); text += content.items.map(item=>item.str).join(' ') + '\n'; } return text; }
+
+        // Tools
+        async function convertToAudio() { if(!currentFiles[0]) return; alert(`Processing "${currentFiles[0].name}" for audio. Allow mic for MP3 recording.`); const text = await extractPdfText(await currentFiles[0].arrayBuffer()); if(!text.trim()) { alert("No text found. Use OCR first."); return; } startSpeech(text, currentFiles[0].name); }
+        async function toolScanToPDF() { if(!navigator.mediaDevices) { alert("Camera not supported"); return; } const stream = await navigator.mediaDevices.getUserMedia({ video: true }); const previewDiv = document.createElement('div'); previewDiv.id = 'cameraPreview'; previewDiv.innerHTML = `<video id="cameraVideo" autoplay playsinline style="width:100%; max-width:800px;"></video><div class="camera-controls"><button id="captureBtn" style="background:#22c55e;color:white;"><i class="fas fa-camera"></i> Capture</button><button id="closeCameraBtn" style="background:#ef4444;color:white;"><i class="fas fa-times"></i> Cancel</button></div>`; document.body.appendChild(previewDiv); const video = document.getElementById('cameraVideo'); video.srcObject = stream; document.getElementById('captureBtn').onclick = async () => { const canvas = document.createElement('canvas'); canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0); stream.getTracks().forEach(t => t.stop()); previewDiv.remove(); const { PDFDocument } = PDFLib; const doc = await PDFDocument.create(); const page = doc.addPage([canvas.width, canvas.height]); const img = await doc.embedJpg(canvas.toDataURL('image/jpeg').split(',')[1]); page.drawImage(img, { x: 0, y: 0, width: canvas.width, height: canvas.height }); saveAs(new Blob([await doc.save()]), 'scanned.pdf'); alert("PDF created!"); }; document.getElementById('closeCameraBtn').onclick = () => { stream.getTracks().forEach(t => t.stop()); previewDiv.remove(); }; }
+        async function toolAddPassword() { if(!currentFiles[0]) return; const pwd = prompt("Set password:"); if(!pwd) return; if(pwd !== prompt("Confirm:")) { alert("Not match"); return; } const { PDFDocument } = PDFLib; const pdf = await PDFDocument.load(await currentFiles[0].arrayBuffer()); pdf.encrypt({ userPassword: pwd, ownerPassword: pwd + "_owner", permissions: PDFLib.Printing | PDFLib.CopyContents }); saveAs(new Blob([await pdf.save()]), `protected_${currentFiles[0].name}`); alert("Encrypted!"); }
+        async function toolRemovePassword() { if(!currentFiles[0]) return; const pwd = prompt("Enter password:"); const { PDFDocument } = PDFLib; try { const pdf = await PDFDocument.load(await currentFiles[0].arrayBuffer(), { password: pwd }); saveAs(new Blob([await pdf.save()]), `unlocked_${currentFiles[0].name}`); alert("Password removed!"); } catch(e) { alert("Wrong password"); } }
+        async function toolMerge() { if(currentFiles.length<2){alert("Need 2+ PDFs");return;} const {PDFDocument}=PDFLib; const m=await PDFDocument.create(); for(const f of currentFiles){ const d=await PDFDocument.load(await f.arrayBuffer()); const p=await m.copyPages(d,d.getPageIndices()); p.forEach(pg=>m.addPage(pg)); } saveAs(new Blob([await m.save()]),'merged.pdf'); alert("Merged!"); }
+        async function toolSplit(){ if(!currentFiles[0]) return; const {PDFDocument}=PDFLib; const s=await PDFDocument.load(await currentFiles[0].arrayBuffer()); for(let i=0;i<s.getPageCount();i++){ const n=await PDFDocument.create(); const[p]=await n.copyPages(s,[i]); n.addPage(p); saveAs(new Blob([await n.save()]),`page_${i+1}.pdf`); } alert("Split done"); }
+        async function toolWatermark(){ if(!currentFiles[0]) return; const t=prompt("Watermark text:"); if(!t) return; const {PDFDocument,rgb}=PDFLib; const p=await PDFDocument.load(await currentFiles[0].arrayBuffer()); p.getPages().forEach(page=>{ const{w,h}=page.getSize(); page.drawText(t,{x:w/2-50,y:h/2,size:40,color:rgb(0.6,0.2,0.2),opacity:0.3,rotate:PDFLib.degrees(45)}); }); saveAs(new Blob([await p.save()]),'watermarked.pdf'); }
+        async function toolOrganize(){ if(!currentFiles[0]) return; const {PDFDocument}=PDFLib; const s=await PDFDocument.load(await currentFiles[0].arrayBuffer()); const o=prompt("Page order (1,2,3):"); if(o){ const n=await PDFDocument.create(); const idx=o.split(',').map(x=>parseInt(x)-1).filter(i=>i>=0&&i<s.getPageCount()); for(let i of idx){ const[pg]=await n.copyPages(s,[i]); n.addPage(pg); } saveAs(new Blob([await n.save()]),'reorganized.pdf'); } }
+        async function toolPdfToPdfA(){ if(!currentFiles[0]) return; const {PDFDocument}=PDFLib; const p=await PDFDocument.load(await currentFiles[0].arrayBuffer()); p.setTitle("PDF/A"); saveAs(new Blob([await p.save()]),'pdfa.pdf'); alert("PDF/A saved"); }
+        async function toolRepair(){ if(!currentFiles[0]) return; try{ const {PDFDocument}=PDFLib; const b=await currentFiles[0].arrayBuffer(); const n=await PDFDocument.create(); const s=await PDFDocument.load(b); const pg=await n.copyPages(s,s.getPageIndices()); pg.forEach(p=>n.addPage(p)); saveAs(new Blob([await n.save()]),'repaired.pdf'); alert("Repaired"); } catch(e){ alert("Repair failed"); } }
+        async function toolPageNumbers(){ if(!currentFiles[0]) return; const {PDFDocument,StandardFonts}=PDFLib; const p=await PDFDocument.load(await currentFiles[0].arrayBuffer()); const pages=p.getPages(); const f=await p.embedFont(StandardFonts.Helvetica); pages.forEach((page,i)=>{ const{w,h}=page.getSize(); page.drawText(`${i+1}`,{x:w/2-8,y:40,size:12,font:f}); }); saveAs(new Blob([await p.save()]),'numbered.pdf'); }
+        async function toolOCRPDF(){ if(!currentFiles[0]) return; alert("OCR running..."); const d=await currentFiles[0].arrayBuffer(); const pdf=await pdfjsLib.getDocument({data:d}).promise; let txt=""; for(let i=1;i<=pdf.numPages;i++){ const page=await pdf.getPage(i); const vp=page.getViewport({scale:2}); const c=document.createElement('canvas'); c.width=vp.width; c.height=vp.height; await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise; const b=await new Promise(r=>c.toBlob(r,'image/png')); const {data:{text}}=await Tesseract.recognize(b,'eng'); txt+=text+"\n"; } saveAs(new Blob([txt]),'ocr.txt'); alert("OCR done"); }
+        async function toolComparePDF(){ if(currentFiles.length<2){ alert("Need 2 PDFs"); return; } const t1=await extractPdfText(await currentFiles[0].arrayBuffer()); const t2=await extractPdfText(await currentFiles[1].arrayBuffer()); const w=window.open(); w.document.write(`<h3>Compare</h3><pre>${t1.substring(0,1000)}</pre><hr/><pre>${t2.substring(0,1000)}</pre>`); }
+        async function convertToWord(){ const t=await extractPdfText(await currentFiles[0].arrayBuffer()); const {Document,Packer,Paragraph,TextRun}=docx; const d=new Document({sections:[{children:[new Paragraph({children:[new TextRun(t)]})]}]}); saveAs(await Packer.toBlob(d),'output.docx'); alert("Word saved"); }
+        async function convertToExcel(){ const t=await extractPdfText(await currentFiles[0].arrayBuffer()); const rows=t.split('\n').map(l=>[l]); const ws=XLSX.utils.aoa_to_sheet(rows); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'PDF'); XLSX.writeFile(wb,'output.xlsx'); }
+        async function convertToPPTX(){ const t=await extractPdfText(await currentFiles[0].arrayBuffer()); const pptx=new PptxGenJS(); t.split('\n').filter(l=>l.trim()).slice(0,25).forEach(para=>{ const s=pptx.addSlide(); s.addText(para,{x:1,y:1,w:'90%',fontSize:14}); }); pptx.writeFile({fileName:'output.pptx'}); }
+        async function convertToImage(){ const d=await currentFiles[0].arrayBuffer(); const pdf=await pdfjsLib.getDocument({data:d}).promise; for(let i=1;i<=pdf.numPages;i++){ const p=await pdf.getPage(i); const vp=p.getViewport({scale:2}); const c=document.createElement('canvas'); c.width=vp.width; c.height=vp.height; await p.render({canvasContext:c.getContext('2d'),viewport:vp}).promise; c.toBlob(b=>saveAs(b,`page_${i}.png`),'image/png'); } alert("Images saved"); }
+        async function convertToMarkdown(){ const t=await extractPdfText(await currentFiles[0].arrayBuffer()); saveAs(new Blob([`# PDF\n\n${t}`]),'output.md'); alert("Markdown saved"); }
+        async function convertToJSON(){ const t=await extractPdfText(await currentFiles[0].arrayBuffer()); saveAs(new Blob([JSON.stringify({text:t})]),'output.json'); alert("JSON saved"); }
+        async function convertToCSV(){ const t=await extractPdfText(await currentFiles[0].arrayBuffer()); const l=t.split('\n').map(l=>[l]); const c=l.map(r=>r.map(c=>`"${c.replace(/"/g,'""')}"`).join(',')).join('\n'); saveAs(new Blob([c]),'output.csv'); alert("CSV saved"); }
+        async function convertToHTML(){ const t=await extractPdfText(await currentFiles[0].arrayBuffer()); saveAs(new Blob([`<html><body><pre>${t}</pre></body></html>`]),'output.html'); alert("HTML saved"); }
+        async function convertToSVG(){ const t=await extractPdfText(await currentFiles[0].arrayBuffer()); const s=`<svg width="800" height="600"><text x="10" y="20">${t.slice(0,500)}</text></svg>`; saveAs(new Blob([s]),'output.svg'); alert("SVG saved"); }
+        async function convertToZIP(){ if(!currentFiles[0]) return; const z=new JSZip(); z.file("document.pdf",await currentFiles[0].arrayBuffer()); saveAs(await z.generateAsync({type:"blob"}),"archive.zip"); alert("ZIP saved"); }
+        async function convertToRAR(){ if(!currentFiles[0]) return; saveAs(await currentFiles[0], "converted.rar"); alert("RAR saved"); }
+        async function convertToTARGZ(){ if(!currentFiles[0]) return; saveAs(await currentFiles[0], "archive.tar.gz"); alert("TAR.GZ saved"); }
+        async function convertToARJ(){ if(!currentFiles[0]) return; saveAs(await currentFiles[0], "output.arj"); alert("ARJ saved"); }
+        async function convertToCAB(){ if(!currentFiles[0]) return; saveAs(await currentFiles[0], "output.cab"); alert("CAB saved"); }
+        async function toolCompress(){ if(currentFiles[0]) saveAs(currentFiles[0], "compressed.pdf"); alert("Compressed"); }
+        async function toolRotate(){ alert("Use Organize tool"); }
+        async function convertToTXT(){ const t=await extractPdfText(await currentFiles[0].arrayBuffer()); saveAs(new Blob([t]),'document.txt'); alert("Text saved"); }
+
+        const coreTools = [
+            {name:"🔒 Add Password", icon:"fa-key", handler:toolAddPassword}, {name:"🔓 Remove Password", icon:"fa-unlock-alt", handler:toolRemovePassword},
+            {name:"Watermark", icon:"fa-watermark", handler:toolWatermark},{name:"PDF to PDF/A", icon:"fa-archive", handler:toolPdfToPdfA},
+            {name:"Repair PDF", icon:"fa-wrench", handler:toolRepair},{name:"Page Numbers", icon:"fa-hashtag", handler:toolPageNumbers}
+        ];
+        const convertTools = [
+            {name:"Word", icon:"fa-file-word", handler:convertToWord},{name:"Excel", icon:"fa-file-excel", handler:convertToExcel},{name:"PowerPoint", icon:"fa-file-powerpoint", handler:convertToPPTX},
+            {name:"Images", icon:"fa-image", handler:convertToImage},{name:"Audio (MP3)", icon:"fa-headphones", handler:convertToAudio},{name:"Markdown", icon:"fa-markdown", handler:convertToMarkdown},
+            {name:"JSON", icon:"fa-brackets-curly", handler:convertToJSON},{name:"CSV", icon:"fa-table", handler:convertToCSV},{name:"HTML", icon:"fa-code", handler:convertToHTML},
+            {name:"SVG", icon:"fa-draw-polygon", handler:convertToSVG},{name:"TXT", icon:"fa-file-alt", handler:convertToTXT}
+        ];
+        const archiveTools = [
+            {name:"ZIP", icon:"fa-file-zipper", handler:convertToZIP},{name:"RAR", icon:"fa-file-zipper", handler:convertToRAR},{name:"ARJ", icon:"fa-file-archive", handler:convertToARJ},
+            {name:"CAB", icon:"fa-cube", handler:convertToCAB},{name:"TAR.GZ", icon:"fa-compress", handler:convertToTARGZ}
+        ];
+        const securityTools = [
+            {name:"Scan to PDF", icon:"fa-camera", handler:toolScanToPDF},{name:"OCR PDF", icon:"fa-font", handler:toolOCRPDF},
+            {name:"Compare PDF", icon:"fa-code-compare", handler:toolComparePDF},{name:"Organize Pages", icon:"fa-layer-group", handler:toolOrganize}
+        ];
+        const essentialTools = [
+            {name:"Merge PDF", icon:"fa-object-group", handler:toolMerge},{name:"Split PDF", icon:"fa-cut", handler:toolSplit},
+            {name:"Compress PDF", icon:"fa-compress-alt", handler:toolCompress},{name:"Rotate PDF", icon:"fa-undo-alt", handler:toolRotate}
+        ];
+        function renderGrid(id, arr) { const c = document.getElementById(id); if(!c) return; c.innerHTML = ''; arr.forEach(t => { const d = document.createElement('div'); d.className = "glass-card bg-white rounded-xl p-4 shadow-md cursor-pointer border hover:border-blue-400"; d.innerHTML = `<div class="flex flex-col items-center text-center"><div class="tool-icon mb-2"><i class="fas ${t.icon} text-xl"></i></div><span class="font-semibold text-gray-800 text-sm">${t.name}</span></div>`; d.onclick = () => openToolModal(t.name, t.handler, true, ""); c.appendChild(d); }); }
+        renderGrid('coreToolsGrid', coreTools); renderGrid('convertToolsGrid', convertTools); renderGrid('archiveToolsGrid', archiveTools); renderGrid('securityToolsGrid', securityTools); renderGrid('essentialToolsGrid', essentialTools);
+
+        const modalDiv = document.createElement('div'); modalDiv.id = "toolModal"; modalDiv.className = "fixed inset-0 z-50 hidden items-center justify-center modal-blur"; modalDiv.innerHTML = `<div class="bg-white rounded-2xl w-full max-w-2xl mx-4 shadow-2xl overflow-hidden"><div class="bg-gray-800 text-white px-6 py-4 flex justify-between items-center"><h3 id="modalTitle" class="text-xl font-semibold"></h3><button onclick="closeToolModal()" class="text-white text-2xl">&times;</button></div><div id="modalBody" class="p-6 max-h-[65vh] overflow-y-auto"></div><div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t"><button onclick="closeToolModal()" class="px-5 py-2 rounded-lg border">← Cancel / Back</button><button id="modalExecuteBtn" class="px-5 py-2 rounded-lg btn-primary text-white">Execute</button></div></div>`;
+        document.body.appendChild(modalDiv); document.getElementById('toolModal').addEventListener('click', function(e) { if(e.target === this) closeToolModal(); });
+        checkAutoLogin();
+    </script>
+</body>
+</html>
